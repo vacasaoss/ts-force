@@ -9,7 +9,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/vacasaoss/ts-force"
+    "url": "https://github.com/vacasaoss/ts-force",
+    "directory": "ts-force-gen"
   },
   "keywords": [
     "salesforce",

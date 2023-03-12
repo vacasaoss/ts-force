@@ -6,7 +6,8 @@
   "typings": "build/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/vacasaoss/ts-force"
+    "url": "https://github.com/vacasaoss/ts-force",
+    "directory": "ts-force"
   },
   "keywords": [
     "salesforce",
