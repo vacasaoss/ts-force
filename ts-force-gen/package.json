@@ -1,5 +1,5 @@
 {
-  "name": "@vacasa/ts-force-gen",
+  "name": "@vacasaoss/ts-force-gen",
   "version": "3.1.1",
   "description": "Code generation for ts-force",
   "main": "build/index.js",
