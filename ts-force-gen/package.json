@@ -1,5 +1,5 @@
 {
-  "name": "ts-force-gen",
+  "name": "@vacasaoss/ts-force-gen",
   "version": "3.2.0",
   "description": "Code generation for ts-force",
   "main": "build/index.js",
@@ -9,7 +9,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ChuckJonas/ts-force.git"
+    "url": "https://github.com/vacasaoss/ts-force",
+    "directory": "ts-force-gen"
   },
   "keywords": [
     "salesforce",
