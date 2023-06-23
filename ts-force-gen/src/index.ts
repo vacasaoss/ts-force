@@ -34,18 +34,22 @@ async function checkVersion () {
 
   let tsforce: string;
   let gen: string;
+  let parent: string;
   try {
-    gen = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')).version;
+    const {version, name} = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+    gen = version;
+    parent = name.split('/')[0] ?? ''
   } catch (e) {
     console.warn('Failed to detect package version of ts-force-gen');
     return;
   }
 
-  for (let dir of fs.readdirSync('node_modules')) {
+  for (let dir of fs.readdirSync(path.join('node_modules', parent))) {
     try {
       if (dir === 'ts-force') {
-        let json = JSON.parse(fs.readFileSync(path.join('node_modules', dir, 'package.json'), 'utf8'));
+        let json = JSON.parse(fs.readFileSync(path.join('node_modules', parent, dir, 'package.json'), 'utf8'));
         tsforce = json.version;
+        break;
       }
     } catch (err) { }
   }
