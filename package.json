@@ -1,5 +1,5 @@
 {
-  "name": "ts-force-project",
+  "name": "@vacasaoss/ts-force-project",
   "version": "3.4.0",
   "description": "",
   "scripts": {
@@ -17,7 +17,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ChuckJonas/ts-force.git"
+    "url": "https://github.com/vacasaoss/ts-force"
   },
   "author": "",
   "license": "ISC",
