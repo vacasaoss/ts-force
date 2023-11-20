@@ -13,6 +13,7 @@ import { SObject } from './sObject';
 import { CompositeError, StandardRestError } from './errors';
 import { FieldProps } from '..';
 import { CalendarDate, calendarToString, getCalendarDate } from '../utils/calendarDate';
+import { AxiosRequestHeaders } from 'axios';
 
 export interface DMLResponse {
   id: string;
@@ -222,10 +223,17 @@ export abstract class RestObject extends SObject {
   /**
    * Updates the sObject on Salesforce
    * @param {boolean} [refresh] Set to true to apply GET after update
+   * @param {Date} [ifModifiedSince] Set If-Modified-Since conditional header - has no effect if refresh=true
+   * @param {Date} [ifUnmodifiedSince] Set If-Modified-Since conditional header - has no effect if refresh=true
    * @returns {Promise<void>}
    * @memberof RestObject
    */
-  public async update(opts?: { refresh?: boolean; sendAllFields?: boolean }): Promise<this> {
+  public async update(opts?: { 
+      refresh?: boolean; 
+      sendAllFields?: boolean;
+      ifModifiedSince?: Date;
+      ifUnmodifiedSince?: Date;
+     }): Promise<this> {
     opts = opts || {};
     if (this.id == null) {
       throw new Error('Must have Id to update!');
@@ -233,9 +241,13 @@ export abstract class RestObject extends SObject {
     if (opts.refresh === true) {
       return this.updateComposite(opts.sendAllFields);
     } else {
+      const headers = {};
+      if (opts.ifModifiedSince) headers['If-Modified-Since'] = opts.ifModifiedSince
+      if (opts.ifUnmodifiedSince) headers['If-Unmodified-Since'] = opts.ifUnmodifiedSince
       await this._client.request.patch(
         `${this.attributes.url}/${this.id}`,
-        this.toJson({ dmlMode: opts.sendAllFields ? 'update' : 'update_modified_only' })
+        this.toJson({ dmlMode: opts.sendAllFields ? 'update' : 'update_modified_only' }),
+        { headers }
       );
       this._modified.clear();
     }
