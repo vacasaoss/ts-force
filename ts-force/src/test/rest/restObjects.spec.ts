@@ -184,7 +184,7 @@ describe('Generated Classes', () => {
     //@ts-expect-error
     acc._client.request.interceptors.request.use((config) => {
       if (config.method === 'patch')
-        expect(config.headers["If-Modified-Since"]).to.equal(modifiedDate.toISOString());
+        expect(config.headers["If-Modified-Since"]).to.equal(modifiedDate.toUTCString());
       return config
     });
     acc.name = "account2";
@@ -201,7 +201,7 @@ describe('Generated Classes', () => {
     //@ts-expect-error
     acc._client.request.interceptors.request.use((config) => {
       if (config.method === 'patch')
-        expect(config.headers["If-Unmodified-Since"]).to.equal(modifiedDate.toISOString());
+        expect(config.headers["If-Unmodified-Since"]).to.equal(modifiedDate.toUTCString());
       return config
     });
     acc.name = "account2";

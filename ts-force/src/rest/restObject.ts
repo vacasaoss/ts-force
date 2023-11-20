@@ -242,8 +242,8 @@ export abstract class RestObject extends SObject {
       return this.updateComposite(opts.sendAllFields);
     } else {
       const headers = {};
-      if (opts.ifModifiedSince) headers['If-Modified-Since'] = opts.ifModifiedSince
-      if (opts.ifUnmodifiedSince) headers['If-Unmodified-Since'] = opts.ifUnmodifiedSince
+      if (opts.ifModifiedSince) headers['If-Modified-Since'] = opts.ifModifiedSince.toUTCString()
+      if (opts.ifUnmodifiedSince) headers['If-Unmodified-Since'] = opts.ifUnmodifiedSince.toUTCString()
       await this._client.request.patch(
         `${this.attributes.url}/${this.id}`,
         this.toJson({ dmlMode: opts.sendAllFields ? 'update' : 'update_modified_only' }),
