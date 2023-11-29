@@ -13,12 +13,12 @@ jobs:
           node-version: "lts/*"
       - run: npm ci
       - run: npm run ci
-      - uses: adobe/update-prerelease-npm-version@v1.0.0
+      - uses: adobe/update-prerelease-npm-version@v1.1.0
         with:
           skip-dependencies-to-update: true
           package-json-path: 'ts-force/package.json'
       - run: echo ${{ steps.pre-release-version.outputs.pre-release-version }} 
-      - uses: adobe/update-prerelease-npm-version@v1.0.0
+      - uses: adobe/update-prerelease-npm-version@v1.1.0
         with:
           skip-dependencies-to-update: true
           package-json-path: 'ts-force-gen/package.json'
