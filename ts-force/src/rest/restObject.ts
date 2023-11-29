@@ -13,7 +13,8 @@ import { SObject } from './sObject';
 import { CompositeError, StandardRestError } from './errors';
 import { FieldProps } from '..';
 import { CalendarDate, calendarToString, getCalendarDate } from '../utils/calendarDate';
-import { AxiosRequestHeaders } from 'axios';
+import { AxiosRequestHeaders, AxiosResponse } from 'axios';
+import { STATUS_CODES } from 'http';
 
 export interface DMLResponse {
   id: string;
@@ -244,11 +245,12 @@ export abstract class RestObject extends SObject {
       const headers = {};
       if (opts.ifModifiedSince) headers['If-Modified-Since'] = opts.ifModifiedSince.toUTCString()
       if (opts.ifUnmodifiedSince) headers['If-Unmodified-Since'] = opts.ifUnmodifiedSince.toUTCString()
-      await this._client.request.patch(
+      const response = await this._client.request.patch(
         `${this.attributes.url}/${this.id}`,
         this.toJson({ dmlMode: opts.sendAllFields ? 'update' : 'update_modified_only' }),
         { headers }
       );
+      this.handleConditionalErrors(response)
       this._modified.clear();
     }
     return this;
@@ -493,6 +495,14 @@ export abstract class RestObject extends SObject {
       });
       let e = new CompositeError('Failed to execute all Composite Batch Requests');
       e.compositeResponses = errors;
+      throw e;
+    }
+  }
+
+  private handleConditionalErrors({ status, data }: AxiosResponse) {
+    if (status == 412) //Precondition Failed {
+      let e = new ConditionalError('Precondition failed on update');
+      e.
       throw e;
     }
   }
