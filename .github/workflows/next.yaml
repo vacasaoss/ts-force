@@ -11,6 +11,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "lts/*"
+      - run: |
+          echo "@vacasaoss:registry=https://npm.pkg.github.com" > .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
       - run: npm ci
       - run: npm run ci
       - uses: adobe/update-prerelease-npm-version@v1.1.0
@@ -26,9 +29,3 @@ jobs:
       - run: npm run publishRuntime
       - run: cd $GITHUB_WORKSPACE/ts-force && npm publish --tag next
       - run: cd $GITHUB_WORKSPACE/ts-force-gen && npm publish --tag next
-
-
-
-
-
-
