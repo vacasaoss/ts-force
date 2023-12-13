@@ -26,7 +26,6 @@ jobs:
           skip-dependencies-to-update: true
           package-json-path: 'ts-force-gen/package.json'
       - run: echo ${{ steps.pre-release-version.outputs.pre-release-version }} 
-      - run: npm run publishRuntime
       - run: cd $GITHUB_WORKSPACE/ts-force && cp ../.npmrc . && npm publish --tag next
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
