@@ -27,8 +27,4 @@ jobs:
           package-json-path: 'ts-force-gen/package.json'
       - run: echo ${{ steps.pre-release-version.outputs.pre-release-version }} 
       - run: cd $GITHUB_WORKSPACE/ts-force && cp ../.npmrc . && npm publish --tag next
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
       - run: cd $GITHUB_WORKSPACE/ts-force-gen && cp ../.npmrc . && npm publish --tag next
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
