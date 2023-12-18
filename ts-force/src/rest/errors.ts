@@ -10,6 +10,8 @@ export class CompositeError extends Error {
   compositeResponses: CompositeBatchResult<any, any>[];
 }
 
+export class ConditionalError extends Error {}
+
 export interface CompositeErrorException {
   type: 'composite';
   e: CompositeError;
@@ -18,6 +20,11 @@ export interface CompositeErrorException {
 export interface InvokableErrorException {
   type: 'invokable';
   e: InvokableResult<{}>;
+}
+
+export interface ConditionalErrorException {
+  type: 'conditional';
+  e: Error;
 }
 
 export interface AnyErrorException {
@@ -39,7 +46,8 @@ export type StandardAnyError = StandardizedSFError & AnyErrorException;
 export type StandardAxiosError = StandardizedSFError & AxiosErrorException;
 export type StandardCompositeError = StandardizedSFError & CompositeErrorException;
 export type StandardInvokableError = StandardizedSFError & InvokableErrorException;
-export type TsForceException = StandardAnyError | StandardAxiosError | StandardCompositeError | StandardInvokableError;
+export type StandardConditionalError = StandardizedSFError & ConditionalErrorException;
+export type TsForceException = StandardAnyError | StandardAxiosError | StandardCompositeError | StandardInvokableError | StandardConditionalError;
 
 export const getStandardError = (e: Error): TsForceException => {
   let err = getExceptionError(e);
@@ -60,6 +68,12 @@ export const getStandardError = (e: Error): TsForceException => {
             return { message: e.message, errorCode: e.statusCode };
           }))
         };
+      } else if (isConditionalError(err.e.response)) {
+        return {
+          type: 'conditional',
+          e: err.e,
+          errorDetails: err.e.response.data || err.e.response['body']
+        }
       } else {
         return {
           type: err.type,
@@ -77,7 +91,7 @@ export const getStandardError = (e: Error): TsForceException => {
   }
 };
 
-export const getExceptionError = (e: any): AnyErrorException | AxiosErrorException | CompositeErrorException | InvokableErrorException => {
+export const getExceptionError = (e: any): AnyErrorException | AxiosErrorException | CompositeErrorException | InvokableErrorException | ConditionalErrorException => {
   if (isAxiosError(e)) {
     return {
       type: 'axios',
@@ -92,6 +106,12 @@ export const getExceptionError = (e: any): AnyErrorException | AxiosErrorExcepti
   else if (isInvokableError(e)) {
     return {
       type: 'invokable',
+      e
+    };
+  }
+  else if (isConditionalError(e)) {
+    return {
+      type: 'conditional',
       e
     };
   }
@@ -111,4 +131,8 @@ export const isCompositeError = (error: any | CompositeError): error is Composit
 
 export const isInvokableError = (error: any | InvokableResult<any>): error is InvokableResult<any> => {
   return Array.isArray(error) && error.length > 0 && error[0].actionName !== undefined;
+};
+
+export const isConditionalError = (error: any | ConditionalError): error is ConditionalError => {
+  return error !== undefined && error.status === 412
 };

@@ -250,7 +250,6 @@ export abstract class RestObject extends SObject {
         this.toJson({ dmlMode: opts.sendAllFields ? 'update' : 'update_modified_only' }),
         { headers }
       );
-      this.handleConditionalErrors(response)
       this._modified.clear();
     }
     return this;
@@ -495,14 +494,6 @@ export abstract class RestObject extends SObject {
       });
       let e = new CompositeError('Failed to execute all Composite Batch Requests');
       e.compositeResponses = errors;
-      throw e;
-    }
-  }
-
-  private handleConditionalErrors({ status, data }: AxiosResponse) {
-    if (status == 412) //Precondition Failed {
-      let e = new ConditionalError('Precondition failed on update');
-      e.
       throw e;
     }
   }
