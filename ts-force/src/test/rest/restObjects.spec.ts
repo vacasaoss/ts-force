@@ -173,7 +173,41 @@ describe('Generated Classes', () => {
     expect(sob['Name']).to.equal(acc2.name);
 
     await acc.delete();
-  });
+  })  
+  
+  it('handle ifModifiedSince', async () => {
+    const modifiedDate = new Date();
+    let acc = new Account({
+      name: 'account'
+    });
+    await acc.insert();
+    //@ts-expect-error
+    acc._client.request.interceptors.request.use((config) => {
+      if (config.method === 'patch')
+        expect(config.headers["If-Modified-Since"]).to.equal(modifiedDate.toUTCString());
+      return config
+    });
+    acc.name = "account2";
+    await acc.update({ refresh: false, ifModifiedSince: new Date()});
+    await acc.delete();
+  })
+
+  it('handle ifUmodifiedSince', async () => {
+    const modifiedDate = new Date();
+    let acc = new Account({
+      name: 'account'
+    });
+    await acc.insert();
+    //@ts-expect-error
+    acc._client.request.interceptors.request.use((config) => {
+      if (config.method === 'patch')
+        expect(config.headers["If-Unmodified-Since"]).to.equal(modifiedDate.toUTCString());
+      return config
+    });
+    acc.name = "account2";
+    await acc.update({ refresh: false, ifUnmodifiedSince: new Date()});
+    await acc.delete();
+  })
 
   it('multi-picklists', async () => {
 
