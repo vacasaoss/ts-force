@@ -52,14 +52,14 @@ export abstract class RestObject extends SObject {
   public _modified = new Set<string>();
 
   constructor(type: string, client?: Rest) {
-    super(type);
+    super(type, client);
     this._client = client || new Rest();
   }
 
   protected initObject(fields?: Partial<FieldProps<RestObject>>) {
     if (fields) {
       if (fields instanceof RestObject) {
-        this._modified = fields._modified;
+        this._modified = fields._modified ?? new Set<string>();
       } else {
         this.setModified(Object.keys(fields) as any);
       }
