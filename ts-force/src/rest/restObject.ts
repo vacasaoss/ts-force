@@ -555,7 +555,7 @@ export abstract class RestObject extends SObject {
           break;
         case 'If-Match':
         case 'If-None-Match':
-          headers[name] = (value as string[]).join(', ');
+          headers[name] = `"${(value as string[]).join('", "')}"`;
           break;
         case 'If-Modified-Since':
         case 'If-Unmodified-Since':
