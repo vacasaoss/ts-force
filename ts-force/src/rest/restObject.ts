@@ -14,6 +14,16 @@ import { CompositeError, StandardRestError } from './errors';
 import { FieldProps } from '..';
 import { CalendarDate, calendarToString, getCalendarDate } from '../utils/calendarDate';
 import { RawAxiosRequestHeaders, AxiosHeaders } from 'axios';
+import {
+  RequestHeadersInput,
+  GetOrHeadRequestHeaders,
+  PatchOrPostRequestHeaders,
+  SforceCallOptions,
+  SforceDuplicateRule,
+  SforceMru,
+  SforceQueryOptions,
+  PackageVersion,
+} from './restHeader';
 
 export interface DMLResponse {
   id: string;
@@ -21,51 +31,6 @@ export interface DMLResponse {
   success: boolean;
   warnings: string[];
 }
-
-export type SforceAutoAssignHeader = 'TRUE' | 'FALSE';
-export type SforceCallOptionsHeader = {
-  client?: string;
-  defaultNamespace?: string;
-};
-export type ContentEncodingHeader = 'gzip' | 'deflate';
-export type ETagHeader = string;
-export type IfMatchHeader = string[];
-export type IfNoneMatchHeader = string[];
-export type IfModifiedSinceHeader = Date;
-export type IfUnmodifiedSinceHeader = Date;
-export type SforceDuplicateRuleHeader = {
-  allowSave?: boolean;
-  includeRecordDetails?: boolean;
-  runAsCurrentUser?: boolean;
-};
-export type SforceMruHeader = {
-  updateMru: boolean;
-};
-export type SforceQueryOptionsHeader = {
-  batchSize: number;
-};
-export type PackageVersionHeader = {
-  package: string;
-  version: string;
-};
-
-export type RequestHeadersInput = {
-  'Sforce-Auto-Assign'?: SforceAutoAssignHeader;
-  'Sforce-Call-Options'?: SforceCallOptionsHeader;
-  'Content-Encoding'?: ContentEncodingHeader;
-  ETag?: ETagHeader;
-  'Sforce-Duplicate-Rule-Header'?: SforceDuplicateRuleHeader;
-  'Sforce-Mru'?: SforceMruHeader;
-  'Sforce-Query-Options'?: SforceQueryOptionsHeader;
-  'x-sfdc-packageversion'?: PackageVersionHeader;
-  'If-Modified-Since'?: IfModifiedSinceHeader;
-  'If-Unmodified-Since'?: IfUnmodifiedSinceHeader;
-  'If-Match'?: IfMatchHeader;
-  'If-None-Match'?: IfNoneMatchHeader;
-};
-
-export const GetOrHeadRequestHeaders = ['If-Match', 'If-None-Match', 'If-Modified-Since'];
-export const PatchOrPostRequestHeaders = ['If-Match', 'If-None-Match', 'If-Unmodified-Since'];
 
 export interface QueryOpts {
   /* Optional rest instance to use */
@@ -273,7 +238,7 @@ export abstract class RestObject extends SObject {
    * @returns {Promise<void>}
    * @memberof RestObject
    */
-  public async update(opts?: { refresh?: boolean; sendAllFields?: boolean; headers?: RequestHeadersInput }): Promise<this> {
+  public async update(opts?: { refresh?: boolean; sendAllFields?: boolean; headers?: RequestHeadersInput[] }): Promise<this> {
     opts = opts || {};
     if (this.id == null) {
       throw new Error('Must have Id to update!');
@@ -545,57 +510,56 @@ export abstract class RestObject extends SObject {
     }
   }
 
-  private setHeader(headersInput: RequestHeadersInput) {
+  private setHeader(headersInput: RequestHeadersInput[]) {
     const headers = {};
-    for (const [name, value] of Object.entries(headersInput)) {
-      switch (name) {
-        case 'Sforce-Auto-Assign':
-          headers[name] = value as unknown as boolean;
-          break;
-        case 'Sforce-Call-Options':
-          headers[name] = this.parseSforceCallOptionsHeader(value as SforceCallOptionsHeader);
-          break;
-        case 'Content-Encoding':
-          headers[name] = value;
-          break;
-        case 'ETag':
-          headers[name] = value as string;
-          break;
-        case 'If-Match':
-        case 'If-None-Match':
-          headers[name] = `"${(value as string[]).join('", "')}"`;
-          break;
-        case 'If-Modified-Since':
-        case 'If-Unmodified-Since':
-          headers[name] = (value as Date).toUTCString();
-          break;
-        case 'Sforce-Duplicate-Rule-Header':
-          headers[name] = this.parseSforceDuplicateRuleHeader(value as SforceDuplicateRuleHeader);
-          break;
-        case 'Sforce-Mru':
-          headers[name] = value as unknown as boolean;
-          break;
-        case 'Sforce-Query-Options':
-          headers[name] = `batchSize=${(value as SforceQueryOptionsHeader).batchSize}`;
-          break;
-        case 'x-sfdc-packageversion':
-          const packageDetail = value as PackageVersionHeader;
-          headers[`x-sfdc-packageversion-${packageDetail.package}`] = packageDetail.version;
-          break;
+    for (const header of headersInput) {
+      for (const [name, value] of Object.entries(headersInput)) {
+        switch (name) {
+          case 'Sforce-Auto-Assign':
+            headers[name] = value as unknown as boolean;
+            break;
+          case 'Sforce-Call-Options':
+            headers[name] = this.parseSforceCallOptions(value as SforceCallOptions);
+            break;
+          case 'Content-Encoding':
+          case 'ETag':
+            headers[name] = value;
+            break;
+          case 'If-Match':
+          case 'If-None-Match':
+            headers[name] = `"${(value as string[]).join('", "')}"`;
+            break;
+          case 'If-Modified-Since':
+          case 'If-Unmodified-Since':
+            headers[name] = (value as Date).toUTCString();
+            break;
+          case 'Sforce-Duplicate-Rule-Header':
+            headers[name] = this.parseSforceDuplicateRule(value as SforceDuplicateRule);
+            break;
+          case 'Sforce-Mru':
+            headers[name] = `updateMru=${(value as SforceMru).updateMru}`;
+            break;
+          case 'Sforce-Query-Options':
+            headers[name] = `batchSize=${(value as SforceQueryOptions).batchSize}`;
+            break;
+          case 'x-sfdc-packageversion':
+            const packageDetail = value as PackageVersion;
+            headers[`x-sfdc-packageversion-${packageDetail.package}`] = packageDetail.version;
+            break;
+        }
       }
     }
-
     return headers;
   }
 
-  private parseSforceCallOptionsHeader = (value: SforceCallOptionsHeader): string => {
+  private parseSforceCallOptions = (value: SforceCallOptions): string => {
     const options: string[] = [];
     if (value.client) options.push(`client=${value.client}`);
     if (value.defaultNamespace) options.push(`defaultNamespace=${value.defaultNamespace}`);
     return options.join('; ');
   };
 
-  private parseSforceDuplicateRuleHeader = (value: SforceDuplicateRuleHeader): string => {
+  private parseSforceDuplicateRule = (value: SforceDuplicateRule): string => {
     const options: string[] = [];
     if (value.allowSave !== undefined) options.push(`allowSave=${value.allowSave}`);
     if (value.includeRecordDetails !== undefined) options.push(`includeRecordDetails=${value.includeRecordDetails}`);
