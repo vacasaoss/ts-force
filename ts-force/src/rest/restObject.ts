@@ -556,7 +556,7 @@ export abstract class RestObject extends SObject {
           headers[name] = this.parseSforceCallOptionsHeader(value as SforceCallOptionsHeader);
           break;
         case 'Content-Encoding':
-          headers[name] = value as 'gzip' | 'deflate';
+          headers[name] = value;
           break;
         case 'ETag':
           headers[name] = value as string;
@@ -576,7 +576,7 @@ export abstract class RestObject extends SObject {
           headers[name] = value as unknown as boolean;
           break;
         case 'Sforce-Query-Options':
-          headers[name] = `batchSize=${value}`;
+          headers[name] = `batchSize=${(value as SforceQueryOptionsHeader).batchSize}`;
           break;
         case 'x-sfdc-packageversion':
           const packageDetail = value as PackageVersionHeader;
