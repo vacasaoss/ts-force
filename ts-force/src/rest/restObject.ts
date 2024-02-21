@@ -513,14 +513,12 @@ export abstract class RestObject extends SObject {
   private setHeader(headersInput: RequestHeadersInput[]) {
     const headers = {};
     for (const header of headersInput) {
-      for (const [name, value] of Object.entries(headersInput)) {
+      for (const [name, value] of Object.entries(header)) {
         switch (name) {
-          case 'Sforce-Auto-Assign':
-            headers[name] = value as unknown as boolean;
-            break;
           case 'Sforce-Call-Options':
             headers[name] = this.parseSforceCallOptions(value as SforceCallOptions);
             break;
+          case 'Sforce-Auto-Assign':
           case 'Content-Encoding':
           case 'ETag':
             headers[name] = value;
