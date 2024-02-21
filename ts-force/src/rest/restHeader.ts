@@ -33,5 +33,5 @@ export type RequestHeadersInput = {
   'If-None-Match'?: string[];
 };
 
-export const GetOrHeadRequestHeaders = ['If-Match', 'If-None-Match', 'If-Modified-Since'];
-export const PatchOrPostRequestHeaders = ['If-Match', 'If-None-Match', 'If-Unmodified-Since'];
+export const GetOrHeadRequestHeaders: (keyof RequestHeadersInput)[] = ['If-Match', 'If-None-Match', 'If-Modified-Since'];
+export const PatchOrPostRequestHeaders: (keyof RequestHeadersInput)[] = ['If-Match', 'If-None-Match', 'If-Unmodified-Since'];

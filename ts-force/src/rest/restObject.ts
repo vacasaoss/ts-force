@@ -254,8 +254,12 @@ export abstract class RestObject extends SObject {
       );
 
       // Check if it contains Conditional Request Headers and deal with errors
-      const containsGetOrHeadHeader = Object.keys(opts.headers).some((key) => GetOrHeadRequestHeaders.includes(key));
-      const containsPatchOrPostHeader = Object.keys(opts.headers).some((key) => PatchOrPostRequestHeaders.includes(key));
+      const containsGetOrHeadHeader = Object.keys(opts.headers).some((key) =>
+        GetOrHeadRequestHeaders.includes(key as keyof RequestHeadersInput)
+      );
+      const containsPatchOrPostHeader = Object.keys(opts.headers).some((key) =>
+        PatchOrPostRequestHeaders.includes(key as keyof RequestHeadersInput)
+      );
       if (containsGetOrHeadHeader && response.status === 304) {
         throw new Error('Not Modified');
       } else if (containsPatchOrPostHeader && response.status === 412) {
