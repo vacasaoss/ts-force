@@ -49,7 +49,7 @@ export type PackageVersionHeader = {
   version: string;
 };
 
-export type GeneralRequestHeaders = {
+export type RequestHeadersInput = {
   'Sforce-Auto-Assign'?: SforceAutoAssignHeader;
   'Sforce-Call-Options'?: SforceCallOptionsHeader;
   'Content-Encoding'?: ContentEncodingHeader;
@@ -58,16 +58,14 @@ export type GeneralRequestHeaders = {
   'Sforce-Mru'?: SforceMruHeader;
   'Sforce-Query-Options'?: SforceQueryOptionsHeader;
   'x-sfdc-packageversion'?: PackageVersionHeader;
-};
-
-export type PatchOrPostRequestHeaders = {
-  'If-Match'?: IfMatchHeader;
-  'If-None-Match'?: IfNoneMatchHeader;
   'If-Modified-Since'?: IfModifiedSinceHeader;
   'If-Unmodified-Since'?: IfUnmodifiedSinceHeader;
+  'If-Match'?: IfMatchHeader;
+  'If-None-Match'?: IfNoneMatchHeader;
 };
 
-export type RequestHeadersInput = GeneralRequestHeaders & PatchOrPostRequestHeaders;
+export const GetOrHeadRequestHeaders = ['If-Match', 'If-None-Match', 'If-Modified-Since'];
+export const PatchOrPostRequestHeaders = ['If-Match', 'If-None-Match', 'If-Unmodified-Since'];
 
 export interface QueryOpts {
   /* Optional rest instance to use */
@@ -289,6 +287,16 @@ export abstract class RestObject extends SObject {
         this.toJson({ dmlMode: opts.sendAllFields ? 'update' : 'update_modified_only' }),
         { headers: headerOutput }
       );
+
+      // Check if it contains Conditional Request Headers and deal with errors
+      const containsGetOrHeadHeader = Object.keys(opts.headers).some((key) => GetOrHeadRequestHeaders.includes(key));
+      const containsPatchOrPostHeader = Object.keys(opts.headers).some((key) => PatchOrPostRequestHeaders.includes(key));
+      if (containsGetOrHeadHeader && response.status === 304) {
+        throw new Error('Not Modified');
+      } else if (containsPatchOrPostHeader && response.status === 412) {
+        throw new Error('Precondition Failed');
+      }
+
       this._modified.clear();
     }
     return this;
