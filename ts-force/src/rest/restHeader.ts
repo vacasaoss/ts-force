@@ -8,7 +8,6 @@ export type PackageVersion = {
 
 export type RequestHeadersInput = {
   'Sforce-Auto-Assign'?: boolean;
-  'Content-Encoding'?: 'gzip' | 'deflate';
   'Sforce-Mru'?: SforceMru;
   'x-sfdc-packageversion'?: PackageVersion;
   'If-Modified-Since'?: Date;

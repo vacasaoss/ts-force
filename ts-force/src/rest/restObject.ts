@@ -511,7 +511,6 @@ export abstract class RestObject extends SObject {
       for (const [name, value] of Object.entries(header)) {
         switch (name) {
           case 'Sforce-Auto-Assign':
-          case 'Content-Encoding':
             headers[name] = value.toString();
             break;
           case 'If-Match':
