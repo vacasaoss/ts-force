@@ -6,6 +6,11 @@ export type PackageVersion = {
   version: string;
 };
 
+export type GenericHeader = {
+  header: string;
+  value: string;
+};
+
 export type RequestHeadersInput = {
   'Sforce-Auto-Assign'?: boolean;
   'Sforce-Mru'?: SforceMru;
@@ -14,7 +19,12 @@ export type RequestHeadersInput = {
   'If-Unmodified-Since'?: Date;
   'If-Match'?: string[];
   'If-None-Match'?: string[];
+  'Generic-Header'?: GenericHeader;
 };
 
-export const GetOrHeadRequestHeaders: (keyof RequestHeadersInput)[] = ['If-Match', 'If-None-Match', 'If-Modified-Since'];
-export const PatchOrPostRequestHeaders: (keyof RequestHeadersInput)[] = ['If-Match', 'If-None-Match', 'If-Unmodified-Since'];
+export const ConditionalRequestHeaders: (keyof RequestHeadersInput)[] = [
+  'If-Match',
+  'If-None-Match',
+  'If-Modified-Since',
+  'If-Unmodified-Since',
+];

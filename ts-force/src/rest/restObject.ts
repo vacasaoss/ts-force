@@ -13,8 +13,7 @@ import { SObject } from './sObject';
 import { CompositeError, ConditionalError, StandardRestError } from './errors';
 import { FieldProps } from '..';
 import { CalendarDate, calendarToString, getCalendarDate } from '../utils/calendarDate';
-import { RawAxiosRequestHeaders, AxiosHeaders } from 'axios';
-import { RequestHeadersInput, GetOrHeadRequestHeaders, PatchOrPostRequestHeaders, SforceMru, PackageVersion } from './restHeader';
+import { RequestHeadersInput, ConditionalRequestHeaders, SforceMru, PackageVersion, GenericHeader } from './restHeader';
 
 export interface DMLResponse {
   id: string;
@@ -245,16 +244,11 @@ export abstract class RestObject extends SObject {
       );
 
       // Check if it contains Conditional Request Headers and deal with errors
-      const containsGetOrHeadHeader = Object.keys(opts.headers).some((key) =>
-        GetOrHeadRequestHeaders.includes(key as keyof RequestHeadersInput)
+      const containsConditionalHeader = Object.keys(opts.headers).some((key) =>
+        ConditionalRequestHeaders.includes(key as keyof RequestHeadersInput)
       );
-      const containsPatchOrPostHeader = Object.keys(opts.headers).some((key) =>
-        PatchOrPostRequestHeaders.includes(key as keyof RequestHeadersInput)
-      );
-      if (containsGetOrHeadHeader && response.status === 304) {
-        throw new ConditionalError('Not Modified');
-      } else if (containsPatchOrPostHeader && response.status === 412) {
-        throw new ConditionalError('Precondition Failed');
+      if (containsConditionalHeader && (response.status === 304 || response.status === 412)) {
+        throw new ConditionalError('Conditions not met');
       }
 
       this._modified.clear();
@@ -528,6 +522,10 @@ export abstract class RestObject extends SObject {
             const packageDetail = value as PackageVersion;
             headers[`x-sfdc-packageversion-${packageDetail.package}`] = packageDetail.version;
             break;
+          case 'Generic-Header':
+          default:
+            const defaultValue = value as GenericHeader;
+            headers[defaultValue.header] = defaultValue.value;
         }
       }
     }
