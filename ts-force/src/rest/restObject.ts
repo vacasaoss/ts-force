@@ -10,20 +10,11 @@ import {
 import { Rest } from './rest';
 import { getSFieldProps, SalesforceFieldType, SFieldProperties } from './sObjectDecorators';
 import { SObject } from './sObject';
-import { CompositeError, StandardRestError } from './errors';
+import { CompositeError, ConditionalError, StandardRestError } from './errors';
 import { FieldProps } from '..';
 import { CalendarDate, calendarToString, getCalendarDate } from '../utils/calendarDate';
 import { RawAxiosRequestHeaders, AxiosHeaders } from 'axios';
-import {
-  RequestHeadersInput,
-  GetOrHeadRequestHeaders,
-  PatchOrPostRequestHeaders,
-  SforceCallOptions,
-  SforceDuplicateRule,
-  SforceMru,
-  SforceQueryOptions,
-  PackageVersion,
-} from './restHeader';
+import { RequestHeadersInput, GetOrHeadRequestHeaders, PatchOrPostRequestHeaders, SforceMru, PackageVersion } from './restHeader';
 
 export interface DMLResponse {
   id: string;
@@ -261,9 +252,9 @@ export abstract class RestObject extends SObject {
         PatchOrPostRequestHeaders.includes(key as keyof RequestHeadersInput)
       );
       if (containsGetOrHeadHeader && response.status === 304) {
-        throw new Error('Not Modified');
+        throw new ConditionalError('Not Modified');
       } else if (containsPatchOrPostHeader && response.status === 412) {
-        throw new Error('Precondition Failed');
+        throw new ConditionalError('Precondition Failed');
       }
 
       this._modified.clear();
@@ -519,13 +510,9 @@ export abstract class RestObject extends SObject {
     for (const header of headersInput) {
       for (const [name, value] of Object.entries(header)) {
         switch (name) {
-          case 'Sforce-Call-Options':
-            headers[name] = this.parseSforceCallOptions(value as SforceCallOptions);
-            break;
           case 'Sforce-Auto-Assign':
           case 'Content-Encoding':
-          case 'ETag':
-            headers[name] = value;
+            headers[name] = value.toString();
             break;
           case 'If-Match':
           case 'If-None-Match':
@@ -535,14 +522,8 @@ export abstract class RestObject extends SObject {
           case 'If-Unmodified-Since':
             headers[name] = (value as Date).toUTCString();
             break;
-          case 'Sforce-Duplicate-Rule-Header':
-            headers[name] = this.parseSforceDuplicateRule(value as SforceDuplicateRule);
-            break;
           case 'Sforce-Mru':
             headers[name] = `updateMru=${(value as SforceMru).updateMru}`;
-            break;
-          case 'Sforce-Query-Options':
-            headers[name] = `batchSize=${(value as SforceQueryOptions).batchSize}`;
             break;
           case 'x-sfdc-packageversion':
             const packageDetail = value as PackageVersion;
@@ -553,19 +534,4 @@ export abstract class RestObject extends SObject {
     }
     return headers;
   }
-
-  private parseSforceCallOptions = (value: SforceCallOptions): string => {
-    const options: string[] = [];
-    if (value.client) options.push(`client=${value.client}`);
-    if (value.defaultNamespace) options.push(`defaultNamespace=${value.defaultNamespace}`);
-    return options.join('; ');
-  };
-
-  private parseSforceDuplicateRule = (value: SforceDuplicateRule): string => {
-    const options: string[] = [];
-    if (value.allowSave !== undefined) options.push(`allowSave=${value.allowSave}`);
-    if (value.includeRecordDetails !== undefined) options.push(`includeRecordDetails=${value.includeRecordDetails}`);
-    if (value.runAsCurrentUser !== undefined) options.push(`runAsCurrentUser=${value.runAsCurrentUser}`);
-    return options.join(', ');
-  };
 }
