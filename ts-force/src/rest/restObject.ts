@@ -526,6 +526,7 @@ export abstract class RestObject extends SObject {
           default:
             const defaultValue = value as GenericHeader;
             headers[defaultValue.header] = defaultValue.value;
+            break;
         }
       }
     }

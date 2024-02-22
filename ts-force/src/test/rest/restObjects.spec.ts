@@ -173,14 +173,17 @@ describe('Generated Classes', () => {
   });
 
   it('handle multiple headers', async () => {
-    const modifiedDate = new Date();
     let acc = new Account({
       name: 'account',
     });
     await acc.insert();
     //@ts-expect-error
     acc._client.request.interceptors.request.use((config) => {
-      if (config.method === 'patch') expect(config.headers['If-Modified-Since']).to.equal(modifiedDate.toUTCString());
+      if (config.method === 'patch') expect(config.headers['Sforce-Auto-Assign']).to.equal('false');
+      if (config.method === 'patch') expect(config.headers['Sforce-Mru']).to.equal('updateMru=true');
+      if (config.method === 'patch') expect(config.headers['If-Unmodified-Since']).to.equal(new Date().toUTCString());
+      if (config.method === 'patch') expect(config.headers['If-Modified-Since']).to.equal(new Date('2021-12-12').toUTCString());
+      if (config.method === 'patch') expect(config.headers['Custom-Header']).to.equal('Custom-Value');
       return config;
     });
     acc.name = 'account2';
@@ -192,29 +195,7 @@ describe('Generated Classes', () => {
           'If-Modified-Since': new Date('2021-12-12'),
           'Sforce-Auto-Assign': false,
           'Sforce-Mru': { updateMru: true },
-        },
-      ],
-    });
-    await acc.delete();
-  });
-
-  it('handle generic headers', async () => {
-    const modifiedDate = new Date();
-    let acc = new Account({
-      name: 'account',
-    });
-    await acc.insert();
-    //@ts-expect-error
-    acc._client.request.interceptors.request.use((config) => {
-      if (config.method === 'patch') expect(config.headers['If-Unmodified-Since']).to.equal(modifiedDate.toUTCString());
-      return config;
-    });
-    acc.name = 'account2';
-    await acc.update({
-      refresh: false,
-      headers: [
-        {
-          'Generic-Header': { header: 'Sforce-Mru', value: 'updateMru=true' },
+          'Generic-Header': { header: 'Custom-Header', value: 'Custom-Value' },
         },
       ],
     });
