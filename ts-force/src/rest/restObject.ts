@@ -229,12 +229,14 @@ export abstract class RestObject extends SObject {
    * @returns {Promise<void>}
    * @memberof RestObject
    */
-  public async update(opts?: { 
-      refresh?: boolean; 
-      sendAllFields?: boolean;
-      ifModifiedSince?: Date;
-      ifUnmodifiedSince?: Date;
-     }): Promise<this> {
+  public async update(opts?: {
+    refresh?: boolean;
+    sendAllFields?: boolean;
+    ifModifiedSince?: Date;
+    ifUnmodifiedSince?: Date;
+    autoAssign?: boolean;
+    additionalRequestHeaders?: Record<string, string>;
+  }): Promise<this> {
     opts = opts || {};
     if (this.id == null) {
       throw new Error('Must have Id to update!');
@@ -242,10 +244,12 @@ export abstract class RestObject extends SObject {
     if (opts.refresh === true) {
       return this.updateComposite(opts.sendAllFields);
     } else {
-      const headers = {};
-      if (opts.ifModifiedSince) headers['If-Modified-Since'] = opts.ifModifiedSince.toUTCString()
-      if (opts.ifUnmodifiedSince) headers['If-Unmodified-Since'] = opts.ifUnmodifiedSince.toUTCString()
-      const response = await this._client.request.patch(
+      let headers = {};
+      if (opts.ifModifiedSince) headers['If-Modified-Since'] = opts.ifModifiedSince.toUTCString();
+      if (opts.ifUnmodifiedSince) headers['If-Unmodified-Since'] = opts.ifUnmodifiedSince.toUTCString();
+      if (opts.autoAssign !== undefined) headers['Sforce-Auto-Assign'] = opts.autoAssign.toString().toUpperCase();
+      if (opts.additionalRequestHeaders) headers = { ...headers, ...opts.additionalRequestHeaders };
+      await this._client.request.patch(
         `${this.attributes.url}/${this.id}`,
         this.toJson({ dmlMode: opts.sendAllFields ? 'update' : 'update_modified_only' }),
         { headers }
