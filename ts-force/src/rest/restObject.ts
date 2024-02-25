@@ -13,7 +13,7 @@ import { SObject } from './sObject';
 import { CompositeError, ConditionalError, StandardRestError } from './errors';
 import { FieldProps } from '..';
 import { CalendarDate, calendarToString, getCalendarDate } from '../utils/calendarDate';
-import { RequestHeadersInput, ConditionalRequestHeaders, SforceMru, PackageVersion, GenericHeader } from './restHeader';
+import { ConditionalRequestHeaders, GeneralRequestHeadersInput } from './restHeader';
 
 export interface DMLResponse {
   id: string;
@@ -228,7 +228,7 @@ export abstract class RestObject extends SObject {
    * @returns {Promise<void>}
    * @memberof RestObject
    */
-  public async update(opts?: { refresh?: boolean; sendAllFields?: boolean; headers?: RequestHeadersInput[] }): Promise<this> {
+  public async update(opts?: { refresh?: boolean; sendAllFields?: boolean; headers?: GeneralRequestHeadersInput }): Promise<this> {
     opts = opts || {};
     if (this.id == null) {
       throw new Error('Must have Id to update!');
@@ -236,19 +236,20 @@ export abstract class RestObject extends SObject {
     if (opts.refresh === true) {
       return this.updateComposite(opts.sendAllFields);
     } else {
-      const headerOutput = this.setHeader(opts.headers);
+      const headers = this.convertValuesToStrings(opts.headers);
       const response = await this._client.request.patch(
         `${this.attributes.url}/${this.id}`,
         this.toJson({ dmlMode: opts.sendAllFields ? 'update' : 'update_modified_only' }),
-        { headers: headerOutput }
+        { headers }
       );
 
       // Check if it contains Conditional Request Headers and deal with errors
-      const containsConditionalHeader = Object.keys(opts.headers).some((key) =>
-        ConditionalRequestHeaders.includes(key as keyof RequestHeadersInput)
-      );
+      const containsConditionalHeader = Object.keys(headers).some((key) => ConditionalRequestHeaders.includes(key));
       if (containsConditionalHeader && (response.status === 304 || response.status === 412)) {
-        throw new ConditionalError('Conditions not met');
+        const problematicHeaders = Object.keys(headers)
+          .filter((key) => ConditionalRequestHeaders.includes(key))
+          .join(', ');
+        throw new ConditionalError(`Conditions not met. Headers: ${problematicHeaders}`);
       }
 
       this._modified.clear();
@@ -499,36 +500,16 @@ export abstract class RestObject extends SObject {
     }
   }
 
-  private setHeader(headersInput: RequestHeadersInput[]) {
+  private convertValuesToStrings(headerInput: GeneralRequestHeadersInput) {
     const headers = {};
-    for (const header of headersInput) {
-      for (const [name, value] of Object.entries(header)) {
-        switch (name) {
-          case 'Sforce-Auto-Assign':
-            headers[name] = value.toString();
-            break;
-          case 'If-Match':
-          case 'If-None-Match':
-            headers[name] = `"${(value as string[]).join('", "')}"`;
-            break;
-          case 'If-Modified-Since':
-          case 'If-Unmodified-Since':
-            headers[name] = (value as Date).toUTCString();
-            break;
-          case 'Sforce-Mru':
-            headers[name] = `updateMru=${(value as SforceMru).updateMru}`;
-            break;
-          case 'x-sfdc-packageversion':
-            const packageDetail = value as PackageVersion;
-            headers[`x-sfdc-packageversion-${packageDetail.package}`] = packageDetail.version;
-            break;
-          case 'Generic-Header':
-          default:
-            const defaultValue = value as GenericHeader;
-            headers[defaultValue.header] = defaultValue.value;
-            break;
-        }
+    for (const key in headerInput) {
+      const value = headerInput[key];
+      if (value instanceof Date) {
+        headerInput[key] = (value as Date).toUTCString();
+      } else if (typeof value === 'boolean') {
+        headerInput[key] = value.toString();
       }
+      headers[key] = headerInput[key];
     }
     return headers;
   }

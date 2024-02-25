@@ -179,25 +179,19 @@ describe('Generated Classes', () => {
     await acc.insert();
     //@ts-expect-error
     acc._client.request.interceptors.request.use((config) => {
-      if (config.method === 'patch') expect(config.headers['Sforce-Auto-Assign']).to.equal('false');
+      if (config.method === 'patch') expect(config.headers['Sforce-Auto-Assign']).to.equal('true');
       if (config.method === 'patch') expect(config.headers['Sforce-Mru']).to.equal('updateMru=true');
-      if (config.method === 'patch') expect(config.headers['If-Unmodified-Since']).to.equal(new Date().toUTCString());
-      if (config.method === 'patch') expect(config.headers['If-Modified-Since']).to.equal(new Date('2021-12-12').toUTCString());
-      if (config.method === 'patch') expect(config.headers['Custom-Header']).to.equal('Custom-Value');
+      if (config.method === 'patch') expect(config.headers['If-Modified-Since']).to.equal(new Date().toUTCString());
       return config;
     });
     acc.name = 'account2';
     await acc.update({
       refresh: false,
-      headers: [
-        {
-          'If-Unmodified-Since': new Date(),
-          'If-Modified-Since': new Date('2021-12-12'),
-          'Sforce-Auto-Assign': false,
-          'Sforce-Mru': { updateMru: true },
-          'Generic-Header': { header: 'Custom-Header', value: 'Custom-Value' },
-        },
-      ],
+      headers: {
+        'Sforce-Auto-Assign': true,
+        'If-Modified-Since': new Date(),
+        'Sforce-Mru': 'updateMru=true',
+      },
     });
     await acc.delete();
   });
