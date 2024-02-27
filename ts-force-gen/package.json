@@ -1,6 +1,6 @@
 {
   "name": "@vacasaoss/ts-force-gen",
-  "version": "3.4.4",
+  "version": "4.0.0",
   "description": "Code generation for ts-force",
   "main": "build/index.js",
   "typings": "build/index.d.ts",

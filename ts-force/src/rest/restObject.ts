@@ -10,11 +10,10 @@ import {
 import { Rest } from './rest';
 import { getSFieldProps, SalesforceFieldType, SFieldProperties } from './sObjectDecorators';
 import { SObject } from './sObject';
-import { CompositeError, StandardRestError } from './errors';
+import { CompositeError, ConditionalError, StandardRestError } from './errors';
 import { FieldProps } from '..';
 import { CalendarDate, calendarToString, getCalendarDate } from '../utils/calendarDate';
-import { AxiosRequestHeaders, AxiosResponse } from 'axios';
-import { STATUS_CODES } from 'http';
+import { ConditionalRequestHeaders, GeneralRequestHeadersInput } from './restHeader';
 
 export interface DMLResponse {
   id: string;
@@ -229,12 +228,7 @@ export abstract class RestObject extends SObject {
    * @returns {Promise<void>}
    * @memberof RestObject
    */
-  public async update(opts?: { 
-      refresh?: boolean; 
-      sendAllFields?: boolean;
-      ifModifiedSince?: Date;
-      ifUnmodifiedSince?: Date;
-     }): Promise<this> {
+  public async update(opts?: { refresh?: boolean; sendAllFields?: boolean; headers?: GeneralRequestHeadersInput }): Promise<this> {
     opts = opts || {};
     if (this.id == null) {
       throw new Error('Must have Id to update!');
@@ -242,14 +236,22 @@ export abstract class RestObject extends SObject {
     if (opts.refresh === true) {
       return this.updateComposite(opts.sendAllFields);
     } else {
-      const headers = {};
-      if (opts.ifModifiedSince) headers['If-Modified-Since'] = opts.ifModifiedSince.toUTCString()
-      if (opts.ifUnmodifiedSince) headers['If-Unmodified-Since'] = opts.ifUnmodifiedSince.toUTCString()
+      const headers = this.convertValuesToStrings(opts.headers);
       const response = await this._client.request.patch(
         `${this.attributes.url}/${this.id}`,
         this.toJson({ dmlMode: opts.sendAllFields ? 'update' : 'update_modified_only' }),
         { headers }
       );
+
+      // Check if it contains Conditional Request Headers and deal with errors
+      const containsConditionalHeader = Object.keys(headers).some((key) => ConditionalRequestHeaders.includes(key));
+      if (containsConditionalHeader && (response.status === 304 || response.status === 412)) {
+        const problematicHeaders = Object.keys(headers)
+          .filter((key) => ConditionalRequestHeaders.includes(key))
+          .join(', ');
+        throw new ConditionalError(`Conditions not met. Headers: ${problematicHeaders}`);
+      }
+
       this._modified.clear();
     }
     return this;
@@ -496,5 +498,19 @@ export abstract class RestObject extends SObject {
       e.compositeResponses = errors;
       throw e;
     }
+  }
+
+  private convertValuesToStrings(headerInput: GeneralRequestHeadersInput) {
+    const headers = {};
+    for (const key in headerInput) {
+      const value = headerInput[key];
+      if (value instanceof Date) {
+        headerInput[key] = (value as Date).toUTCString();
+      } else if (typeof value === 'boolean') {
+        headerInput[key] = value.toString();
+      }
+      headers[key] = headerInput[key];
+    }
+    return headers;
   }
 }
