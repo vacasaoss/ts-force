@@ -178,14 +178,15 @@ export abstract class RestObject extends SObject {
    * @returns {Promise<void>}
    * @memberof RestObject
    */
-  public async insert(opts?: { refresh?: boolean }): Promise<this> {
+  public async insert(opts?: { refresh?: boolean; headers?: GeneralRequestHeadersInput }): Promise<this> {
     opts = opts || {};
     const { refresh } = opts;
 
     if (refresh === true) {
       return this.insertComposite();
     } else {
-      let response = (await this._client.request.post(`${this.attributes.url}/`, this.toJson({ dmlMode: 'insert' }))).data;
+      const headers = this.convertValuesToStrings(opts.headers);
+      let response = (await this._client.request.post(`${this.attributes.url}/`, this.toJson({ dmlMode: 'insert' }), { headers })).data;
       this.id = response.id;
       this._modified.clear();
     }
