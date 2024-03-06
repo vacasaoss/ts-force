@@ -180,9 +180,14 @@ describe('Generated Classes', () => {
     let acc = new Account({
       name: 'account'
     });
-    await acc.insert();
+    await acc.insert({
+      headers: {
+      'Sforce-Auto-Assign': false,
+      },
+    });
     //@ts-expect-error
     acc._client.request.interceptors.request.use((config) => {
+      if (config.method === 'post') expect(config.headers['Sforce-Auto-Assign']).to.equal('false');
       if (config.method === 'patch') expect(config.headers['Sforce-Auto-Assign']).to.equal('true');
       if (config.method === 'patch') expect(config.headers['Sforce-Mru']).to.equal('updateMru=true');
       if (config.method === 'patch') expect(config.headers['If-Modified-Since']).to.equal(new Date().toUTCString());
